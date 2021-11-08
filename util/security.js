@@ -9,6 +9,12 @@ function Hash(string) {
     return crypto.createHash('sha256').update(process.env.security.seed + string).digest('hex')
 }
 
+function Verify(string, hash) {
+    var ReceivedPassword = Hash(string)
+    if (ReceivedPassword == hash) return true
+    else return false
+}
+
 function Encrypt(string) {
     var encrypted = crypto.publicEncrypt(process.env.security.publicKey, Buffer.from(string))
     return encodeURI(encrypted.toString("base64url"))
@@ -52,6 +58,7 @@ async function GenerateKeyPair() {
 module.exports = {
     GenerateToken: GenerateToken,
     Hash: Hash,
+    Verify: Verify,
     Encrypt: Encrypt,
     Decrypt: Decrypt,
     GenerateKeyPair: GenerateKeyPair

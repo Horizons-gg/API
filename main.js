@@ -54,6 +54,7 @@ MongoClient.connect(`mongodb://${process.env.db.host}:${process.env.db.port}`, f
 const express = require('express')
 const app = express()
 app.listen(process.env.port, () => console.log(`Listening on port ${process.env.port}`))
+app.use(require('cookie-parser')())
 
 process.app = app
 
@@ -66,6 +67,21 @@ process.app = app
 app.put('/user/create', (req, res) => {
     require('./client/user').Create(req, res)
 })
+
+app.get('/user/login', (req, res) => {
+    require('./client/user').Login(req, res)
+})
+
+app.get('/user/password-reset', (req, res) => {
+    require('./client/user').InitiatePasswordReset(req, res)
+})
+
+app.put('/user/password-reset', (req, res) => {
+    require('./client/user').ResetPassword(req, res)
+})
+
+
+//? Encryption Tests
 
 app.get('/security/encrypt', (req, res) => {
     res.status(200).send(security.Encrypt(req.query.string))

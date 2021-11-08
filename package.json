@@ -1,0 +1,23 @@
+{
+  "name": "horizons.api",
+  "author": "Jessica Lancelot",
+  "license": "ISC",
+  "version": "1.0.0",
+  "scripts": {
+    "generate": "node main.js command=generate-secret"
+  },
+  "main": "main.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Horizons-gg/Horizons.API.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Horizons-gg/Horizons.API/issues"
+  },
+  "homepage": "https://github.com/Horizons-gg/Horizons.API#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "generate-password": "^1.6.1",
+    "mongodb": "^4.1.4"
+  }
+}

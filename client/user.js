@@ -1,6 +1,17 @@
 const fs = require('fs')
 const crypto = require('crypto')
 
+async function GetData(req, res) {
+    if (!req.query.token) return res.status(400).send('Missing parameter(s)')
+    var Users = await process.db.collection('users')
+    var user = await Users.findOne({ "security.token": req.query.token })
+    if (!user) return res.status(400).send('Invalid token!')
+
+    user.security.lastLoginAddress = req.ip
+    await Users.updateOne({ username: req.query.username }, { $set: { security: user.security } })
+    return res.status(200).send(user)
+}
+
 async function Create(req, res) {
     var required = ['username', 'password', 'email']
     if (required.some(x => !req.query[x])) return res.status(400).send('Missing parameter(s)')
@@ -81,6 +92,7 @@ async function ResetPassword(req, res) {
 
 
 module.exports = {
+    GetData: GetData,
     Create: Create,
     Login: Login,
     InitiatePasswordReset: InitiatePasswordReset,

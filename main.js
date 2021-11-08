@@ -64,6 +64,10 @@ process.app = app
 //! Routes
 //!
 
+app.get('/user', (req, res) => {
+    require('./client/user').GetData(req, res)
+})
+
 app.put('/user/create', (req, res) => {
     require('./client/user').Create(req, res)
 })

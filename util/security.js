@@ -1,6 +1,5 @@
 const fs = require('fs')
 const crypto = require('crypto')
-const { urlencoded } = require('express')
 
 function GenerateToken(length) {
     return crypto.randomBytes(length || 48).toString('base64url')

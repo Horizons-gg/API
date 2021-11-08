@@ -1,29 +1,76 @@
 const fs = require('fs')
-process.generator = require('generate-password')
+const crypto = require('crypto')
 
 process.env = JSON.parse(fs.readFileSync('config.json', 'utf8'))
+
+
+
+//!
+//! Utilities
+//!
+
+const security = require('./util/security')
+
+process.security = security
+
 
 
 //!
 //! Commands
 //!
 
-if (process.argv[2] === 'command=generate-secret') {
-    process.env.secret = process.generator.generate({ length: 1000, numbers: true })
+if (process.argv[2] === 'reset-token') {
+    process.env.security.token = security.GenerateToken(128)
     fs.writeFileSync('config.json', JSON.stringify(process.env, null, '\t'))
+    process.exit(0)
 }
-
-
+if (process.argv[2] === 'reset-seed') {
+    process.env.security.seed = security.GenerateToken(8)
+    fs.writeFileSync('config.json', JSON.stringify(process.env, null, '\t'))
+    process.exit(0)
+}
+if (process.argv[2] === 'generate-keypair') {
+    security.GenerateKeyPair()
+}
 
 
 //!
 //! Database Connection
 //!
 
-var MongoClient = require('mongodb').MongoClient
+const MongoClient = require('mongodb').MongoClient
 MongoClient.connect(`mongodb://${process.env.db.host}:${process.env.db.port}`, function (err, db) {
     if (err) throw err;
+    console.log('Connected to the database.')
     process.db = db.db(process.env.db.database)
 })
 
-console.log(process.env)
+
+
+//!
+//! Express Server
+//!
+
+const express = require('express')
+const app = express()
+app.listen(process.env.port, () => console.log(`Listening on port ${process.env.port}`))
+
+process.app = app
+
+
+
+//!
+//! Routes
+//!
+
+app.put('/user/create', (req, res) => {
+    require('./client/user').Create(req, res)
+})
+
+app.get('/security/encrypt', (req, res) => {
+    res.status(200).send(security.Encrypt(req.query.string))
+})
+
+app.get('/security/decrypt', (req, res) => {
+    res.status(200).send(security.Decrypt(req.query.string))
+})

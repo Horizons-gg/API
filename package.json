@@ -4,7 +4,9 @@
   "license": "ISC",
   "version": "1.0.0",
   "scripts": {
-    "generate": "node main.js command=generate-secret"
+    "reset-token": "node main.js reset-token",
+    "reset-seed": "node main.js reset-seed",
+    "generate-keypair": "node main.js generate-keypair"
   },
   "main": "main.js",
   "repository": {
@@ -17,7 +19,6 @@
   "homepage": "https://github.com/Horizons-gg/Horizons.API#readme",
   "dependencies": {
     "express": "^4.17.1",
-    "generate-password": "^1.6.1",
     "mongodb": "^4.1.4"
   }
 }

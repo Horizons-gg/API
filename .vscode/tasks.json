@@ -1,0 +1,26 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "reset-seed",
+			"problemMatcher": [],
+			"label": "npm: reset-seed",
+			"detail": "node main.js reset-seed"
+		},
+		{
+			"type": "npm",
+			"script": "reset-token",
+			"problemMatcher": [],
+			"label": "npm: reset-token",
+			"detail": "node main.js reset-token"
+		},
+		{
+			"type": "npm",
+			"script": "generate-keypair",
+			"problemMatcher": [],
+			"label": "npm: generate-keypair",
+			"detail": "node main.js generate-keypair"
+		}
+	]
+}

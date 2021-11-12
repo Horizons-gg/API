@@ -35,7 +35,7 @@ if (process.argv[2] === 'generate-keypair') {
 
 
 //!
-//! Database Connection
+//! MongoDB
 //!
 
 const MongoClient = require('mongodb').MongoClient
@@ -55,6 +55,7 @@ const express = require('express')
 const app = express()
 app.listen(process.env.port, () => console.log(`Listening on port ${process.env.port}`))
 app.use(require('cookie-parser')())
+app.use(require('body-parser').json({ extended: true }))
 
 process.app = app
 
@@ -63,6 +64,10 @@ process.app = app
 //!
 //! Routes
 //!
+
+app.get('/', (req, res) => {
+
+})
 
 app.get('/user', (req, res) => {
     require('./client/user').GetData(req, res)
@@ -85,9 +90,11 @@ app.put('/user/password-reset', (req, res) => {
 })
 
 
+
 //? Encryption Tests
 
 app.get('/security/encrypt', (req, res) => {
+    console.log(req.ip)
     res.status(200).send(security.Encrypt(req.query.string))
 })
 

@@ -12,15 +12,34 @@ async function GetData(req, res) {
     return res.status(200).send(user)
 }
 
+var UserCreateCache = {}
 async function Create(req, res) {
-    var required = ['username', 'password', 'email']
-    if (required.some(x => !req.query[x])) return res.status(400).send('Missing parameter(s)')
+    if (req.query.token !== process.env.security.token) {
+        var required = ['name', 'password', 'email']
+        if (required.some(x => !req.body[x])) return res.status(400).send('Missing parameter(s)')
+    }
 
     var Users = await process.db.collection('users')
-    if (await Users.findOne({ username: req.query.username })) return res.status(400).send('Username is taken!')
-    if (req.query.username.match(/[^a-zA-Z0-9_]/)) return res.status(400).send('Username can only contain letters, numbers and underscores')
-    if (await Users.findOne({ email: req.query.email })) return res.status(400).send('Email is taken!')
-    if (req.query.password.length < 8) return res.status(400).send('Password must be at least 8 characters long!')
+    if (await Users.findOne({ email: req.body.email })) return res.status(400).send('Email is taken!')
+    //if (req.body.username.match(/[^a-zA-Z0-9_]/)) return res.status(400).send('Username can only contain letters, numbers and underscores')
+    if (req.body.password.length < 8) return res.status(400).send('Password must be at least 8 characters long!')
+
+    if (!req.body.code) {
+        if (UserCreateCache[req.body.email]) delete UserCreateCache[req.body.email]
+        UserCreateCache[req.body.email] = {
+            code: crypto.randomBytes(10).toString('base64url'),
+            password: req.body.password
+        }
+        setTimeout(() => { delete UserCreateCache[req.body.email] }, 1000 * 60 * 10)
+
+        require('../util/email').send(req.body.email, 'Account Activation', `Hey ${req.body.name}, thankyou for creating an account with us, please use the following code to activate your account.\n\nActivation Code: ${UserCreateCache[req.body.email].code}`)
+        return res.status(200).send('Account Code Sent!')
+    } else {
+        if (!UserCreateCache[req.body.email]) return res.status(400).send('This activation code has expired!')
+        if (UserCreateCache[req.body.email].password !== req.body.password) return res.status(400).send('Passwords do not match!')
+        if (UserCreateCache[req.body.email].code !== req.body.code) return res.status(400).send('Invalid activation code!')
+        delete UserCreateCache[req.body.email]
+    }
 
     var UUID = null
     while (!UUID) {
@@ -30,33 +49,64 @@ async function Create(req, res) {
 
     var user = {
         _id: UUID,
-        email: req.query.email,
-        username: req.query.username.toLowerCase(),
-        displayName: req.query.username,
+        email: req.body.email,
         created: new Date(),
+        display: {
+            name: req.body.name,
+            avatar: req.body.avatar || 'none'
+        },
         security: {
-            password: process.security.Hash(req.query.password),
+            password: process.security.Hash(req.body.password),
             token: process.security.GenerateToken(),
             lastLoginAddress: req.ip
         },
         permissions: {
             administrator: false
+        },
+        details: {
+            firstName: "",
+            lastName: "",
+            dob: "",
+            gender: "None",
+            personality: "None",
+            business: "",
+            bio: "",
+            location: {
+                address: "",
+                apartment: "",
+                city: "",
+                state: "",
+                country: "",
+                zip: ""
+            }
+        },
+        connections: {
+            discord: {},
+            steam: {},
+            google: {},
+            microsoft: {},
+            github: {},
+            patreon: {}
         }
     }
 
-    return await Users.insertOne(user).then(() => res.status(200).send(user))
+    if (req.query.token === process.env.security.token && req.query.service) {
+        user.connections[req.query.service] = req.body.data
+    }
+
+    return await Users.insertOne(user).then(() => res.status(201).send(user))
 }
 
 async function Login(req, res) {
-    if (!req.query.username || !req.query.password) return res.status(400).send('Missing parameter(s)')
-    req.query.username = req.query.username.toLowerCase()
+    if (!req.query.email || !req.query.password) return res.status(400).send('Missing parameter(s)')
+    req.query.email = req.query.email.toLowerCase()
     var Users = await process.db.collection('users')
-    var user = await Users.findOne({ username: req.query.username }) || await Users.findOne({ email: req.query.username })
-    if (!user) return res.status(400).send('Invalid username or password!')
-    if (!process.security.Verify(req.query.password, user.security.password)) return res.status(400).send('Invalid username or password!')
+    var user = await Users.findOne({ email: req.query.email })
+    if (!user) return res.status(400).send('Invalid email or password!')
+    if (!process.security.Verify(req.query.password, user.security.password)) return res.status(400).send('Invalid email or password!')
 
     user.security.lastLoginAddress = req.ip
-    await Users.updateOne({ username: req.query.username }, { $set: { security: user.security } })
+    await Users.updateOne({ email: req.query.email }, { $set: { security: user.security } })
     return res.status(200).send({ token: user.security.token })
 }
 

@@ -10,7 +10,7 @@ function send(recipient, subject, body) {
     })
 
     var mailOptions = {
-        from: 'Horizons',
+        from: 'Horizons <noreply@horizons.gg>',
         to: recipient,
         subject: subject,
         text: body
@@ -20,7 +20,7 @@ function send(recipient, subject, body) {
         if (error) {
             console.log(error)
         } else {
-            console.log('Email sent: ' + info.response)
+            console.log(`Email sent to <${recipient}>: ` + info.response)
         }
     })
 }

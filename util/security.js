@@ -1,8 +1,14 @@
 const fs = require('fs')
 const crypto = require('crypto')
 
-function GenerateToken(length) {
-    return crypto.randomBytes(length || 48).toString('base64url')
+async function GenerateToken(length) {
+    var Users = await process.db.collection('users')
+    var token
+    while (!token) {
+        var temp = crypto.randomBytes(length || 48).toString('base64url')
+        if (!await Users.findOne({ "security.token": temp })) token = temp
+    }
+    return token
 }
 
 function Hash(string) {

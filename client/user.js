@@ -8,37 +8,42 @@ async function GetData(req, res) {
     if (!user) return res.status(400).send('Invalid token!')
 
     user.security.lastLoginAddress = req.ip
-    await Users.updateOne({ username: req.query.username }, { $set: { security: user.security } })
+    await Users.updateOne({ "security.token": req.query.token }, { $set: { security: user.security } })
     return res.status(200).send(user)
 }
 
 var UserCreateCache = {}
 async function Create(req, res) {
+    var override = false
     if (req.query.token !== process.env.security.token) {
         var required = ['name', 'password', 'email']
         if (required.some(x => !req.body[x])) return res.status(400).send('Missing parameter(s)')
-    }
+    } else override = true
 
     var Users = await process.db.collection('users')
     if (await Users.findOne({ email: req.body.email })) return res.status(400).send('Email is taken!')
-    //if (req.body.username.match(/[^a-zA-Z0-9_]/)) return res.status(400).send('Username can only contain letters, numbers and underscores')
-    if (req.body.password.length < 8) return res.status(400).send('Password must be at least 8 characters long!')
 
-    if (!req.body.code) {
-        if (UserCreateCache[req.body.email]) delete UserCreateCache[req.body.email]
-        UserCreateCache[req.body.email] = {
-            code: crypto.randomBytes(10).toString('base64url'),
-            password: req.body.password
+    if (!override) {
+        //if (req.body.username.match(/[^a-zA-Z0-9_]/)) return res.status(400).send('Username can only contain letters, numbers and underscores')
+        if (!req.body.email.includes('@') || !req.body.email.includes('.')) return res.status(400).send('Email is invalid!')
+        if (req.body.password.length < 8) return res.status(400).send('Password must be at least 8 characters long!')
+
+        if (!req.body.code) {
+            if (UserCreateCache[req.body.email]) delete UserCreateCache[req.body.email]
+            UserCreateCache[req.body.email] = {
+                code: crypto.randomBytes(10).toString('base64url'),
+                password: req.body.password
+            }
+            setTimeout(() => { delete UserCreateCache[req.body.email] }, 1000 * 60 * 10)
+
+            require('../util/email').send(req.body.email, 'Account Activation', `Hey ${req.body.name}, thankyou for creating an account with us, please use the following code to activate your account.\n\nActivation Code: ${UserCreateCache[req.body.email].code}`)
+            return res.status(200).send('Account Code Sent!')
+        } else {
+            if (!UserCreateCache[req.body.email]) return res.status(400).send('This activation code has expired!')
+            if (UserCreateCache[req.body.email].password !== req.body.password) return res.status(400).send('Passwords do not match!')
+            if (UserCreateCache[req.body.email].code !== req.body.code) return res.status(400).send('Invalid activation code!')
+            delete UserCreateCache[req.body.email]
         }
-        setTimeout(() => { delete UserCreateCache[req.body.email] }, 1000 * 60 * 10)
-
-        require('../util/email').send(req.body.email, 'Account Activation', `Hey ${req.body.name}, thankyou for creating an account with us, please use the following code to activate your account.\n\nActivation Code: ${UserCreateCache[req.body.email].code}`)
-        return res.status(200).send('Account Code Sent!')
-    } else {
-        if (!UserCreateCache[req.body.email]) return res.status(400).send('This activation code has expired!')
-        if (UserCreateCache[req.body.email].password !== req.body.password) return res.status(400).send('Passwords do not match!')
-        if (UserCreateCache[req.body.email].code !== req.body.code) return res.status(400).send('Invalid activation code!')
-        delete UserCreateCache[req.body.email]
     }
 
     var UUID = null
@@ -47,17 +52,22 @@ async function Create(req, res) {
         if (!await Users.findOne({ _id: tempUUID })) UUID = tempUUID
     }
 
+    if (!override) password = process.security.Hash(req.body.password)
+    else password = req.body.password
+
     var user = {
         _id: UUID,
         email: req.body.email,
         created: new Date(),
         display: {
             name: req.body.name,
-            avatar: req.body.avatar || 'none'
+            avatar: req.body.avatar || 'none',
+            banner: req.body.banner || 'none',
+            color: '#000000'
         },
         security: {
-            password: process.security.Hash(req.body.password),
-            token: process.security.GenerateToken(),
+            password: password,
+            token: await process.security.GenerateToken(),
             lastLoginAddress: req.ip
         },
         permissions: {
@@ -81,12 +91,12 @@ async function Create(req, res) {
             }
         },
         connections: {
-            discord: {},
-            steam: {},
-            google: {},
-            microsoft: {},
-            github: {},
-            patreon: {}
+            discord: req.body.discord || {},
+            steam: req.body.steam || {},
+            google: req.body.google || {},
+            microsoft: req.body.microsoft || {},
+            github: req.body.github || {},
+            patreon: req.body.patreon || {}
         }
     }
 

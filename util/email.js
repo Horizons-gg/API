@@ -1,6 +1,6 @@
 var nodemailer = require('nodemailer')
 
-function send(recipient, subject, body) {
+function Send(recipient, subject, body) {
     var transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -26,5 +26,5 @@ function send(recipient, subject, body) {
 }
 
 module.exports = {
-    send: send
+    Send: Send
 }

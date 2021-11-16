@@ -36,7 +36,7 @@ async function Create(req, res) {
             }
             setTimeout(() => { delete UserCreateCache[req.body.email] }, 1000 * 60 * 10)
 
-            require('../util/email').send(req.body.email, 'Account Activation', `Hey ${req.body.name}, thankyou for creating an account with us, please use the following code to activate your account.\n\nActivation Code: ${UserCreateCache[req.body.email].code}`)
+            require('../util/email').Send(req.body.email, 'Account Activation', `Hey ${req.body.name}, thankyou for creating an account with us, please use the following code to activate your account.\n\nActivation Code: ${UserCreateCache[req.body.email].code}`)
             return res.status(200).send('Account Code Sent!')
         } else {
             if (!UserCreateCache[req.body.email]) return res.status(400).send('This activation code has expired!')
@@ -59,6 +59,7 @@ async function Create(req, res) {
         _id: UUID,
         email: req.body.email,
         created: new Date(),
+        welcome: true,
         display: {
             name: req.body.name,
             avatar: req.body.avatar || 'none',
@@ -133,7 +134,7 @@ async function InitiatePasswordReset(req, res) {
     PWResetCache[req.query.email] = crypto.randomBytes(10).toString('base64url')
     setTimeout(() => { delete PWResetCache[req.query.email] }, 1000 * 60 * 10)
 
-    require('../util/email').send(req.query.email, 'Confirmation Code', `Hey ${user.username}, we have received your password reset request, please use the following code to reset your password.\n\nConfirmation Code: ${PWResetCache[req.query.email]}`)
+    require('../util/email').Send(req.query.email, 'Confirmation Code', `Hey ${user.username}, we have received your password reset request, please use the following code to reset your password.\n\nConfirmation Code: ${PWResetCache[req.query.email]}`)
     return res.status(200).send('Password reset request sent!')
 }
 

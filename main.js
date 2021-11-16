@@ -90,6 +90,16 @@ app.put('/user/password-reset', (req, res) => {
 })
 
 
+//? Email
+app.post('/email', (req, res) => {
+    var required = ['token', 'recipient', 'subject', 'body']
+    if (required.some(x => !req.body[x])) return res.status(400).send('Missing parameter(s)')
+    if (req.body.token !== process.env.security.token) return res.status(401).send('Invalid token')
+    require('./util/email').Send(req.body.recipient, req.body.subject, req.body.body)
+    return res.status(200).send()
+})
+
+
 
 //? Encryption Tests
 

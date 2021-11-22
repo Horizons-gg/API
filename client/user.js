@@ -37,7 +37,7 @@ async function Create(req, res) {
             setTimeout(() => { delete UserCreateCache[req.body.email] }, 1000 * 60 * 10)
 
             require('../util/email').Send(req.body.email, 'Account Activation', `Hey ${req.body.name}, thankyou for creating an account with us, please use the following code to activate your account.\n\nActivation Code: ${UserCreateCache[req.body.email].code}`)
-            return res.status(200).send('Account Code Sent!')
+            return res.status(200).send(`Activation code sent to ${req.body.email}`)
         } else {
             if (!UserCreateCache[req.body.email]) return res.status(400).send('This activation code has expired!')
             if (UserCreateCache[req.body.email].password !== req.body.password) return res.status(400).send('Passwords do not match!')
